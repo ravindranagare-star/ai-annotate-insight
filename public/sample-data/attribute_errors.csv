@@ -1,0 +1,53 @@
+class,attribute,Wrong Attributes
+text,content_layer,657
+section_header,level,560
+list_item,level,292
+picture,type,239
+picture,content_layer,87
+text,Rotation,54
+section_header,content_layer,53
+formula,content_layer,28
+reading_order,level,23
+col_header,Rotation,19
+section_header,Rotation,12
+picture,Rotation,12
+value,content_layer,11
+table_row,Rotation,9
+key,content_layer,8
+list_item,content_layer,7
+footnote,content_layer,7
+caption,content_layer,5
+row_header,Rotation,5
+table,Rotation,4
+list_item,Rotation,3
+table,content_layer,3
+row_header,content_layer,3
+table_row,content_layer,2
+table_column,Rotation,2
+code,content_layer,1
+table_column,content_layer,1
+value,Rotation,1
+col_header,content_layer,1
+caption,Rotation,1
+fillable_field,content_layer,1
+form,content_layer,0
+footnote,Rotation,0
+fillable_field,Rotation,0
+fillable_cells,Rotation,0
+document Index,Rotation,0
+document Index,content_layer,0
+confidence_self_grading,confidence self-grading,0
+code,Rotation,0
+table_merged_cell,Rotation,0
+checkbox_unselected,Rotation,0
+checkbox_unselected,content_layer,0
+table_row_section,Rotation,0
+checkbox_selected,Rotation,0
+checkbox_selected,content_layer,0
+handwritten_text,Rotation,0
+handwritten_text,content_layer,0
+grading_scale,Rotation,0
+key,Rotation,0
+grading_scale,content_layer,0
+formula,Rotation,0
+form,Rotation,0

@@ -2,6 +2,7 @@ import { Bell, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface DashboardHeaderProps {
   title: string;
@@ -27,6 +28,8 @@ export function DashboardHeader({ title, subtitle }: DashboardHeaderProps) {
               className="pl-10 bg-muted/50"
             />
           </div>
+          
+          <ThemeToggle />
           
           <Button variant="ghost" size="sm" className="relative">
             <Bell className="w-4 h-4" />

@@ -7,12 +7,19 @@ import { QualityTab } from "./dashboard/quality/QualityTab";
 import { UserTrackingTab } from "./dashboard/users/UserTrackingTab";
 import { OperationsTab } from "./dashboard/operations/OperationsTab";
 import { InsightsTab } from "./dashboard/insights/InsightsTab";
+import { BatchManagementTab } from "./dashboard/batch/BatchManagementTab";
+import { AnomalyDetectionTab } from "./dashboard/anomaly/AnomalyDetectionTab";
 
 const tabConfig = {
   overview: {
     title: "Dashboard Overview",
     subtitle: "AI-powered annotation performance insights",
     component: OverviewTab
+  },
+  batches: {
+    title: "Batch Management",
+    subtitle: "Upload and manage annotation data batches",
+    component: BatchManagementTab
   },
   production: {
     title: "Production Analytics",
@@ -35,9 +42,14 @@ const tabConfig = {
     component: OperationsTab
   },
   insights: {
-    title: "AI Insights",
+    title: "AI Insights", 
     subtitle: "Predictive analytics and recommendations",
     component: InsightsTab
+  },
+  anomalies: {
+    title: "Anomaly Detection",
+    subtitle: "AI-powered quality and performance anomaly detection", 
+    component: AnomalyDetectionTab
   }
 };
 

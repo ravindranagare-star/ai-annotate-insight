@@ -9,7 +9,9 @@ import {
   Home,
   TrendingUp,
   Shield,
-  Activity
+  Activity,
+  Database,
+  AlertTriangle
 } from "lucide-react";
 
 interface SidebarProps {
@@ -19,11 +21,13 @@ interface SidebarProps {
 
 const navigation = [
   { id: "overview", label: "Overview", icon: Home },
+  { id: "batches", label: "Batch Management", icon: Database },
   { id: "production", label: "Production", icon: BarChart3 },
   { id: "quality", label: "Quality", icon: Shield },
   { id: "users", label: "User Tracking", icon: Users },
   { id: "operations", label: "Operations", icon: Activity },
   { id: "insights", label: "AI Insights", icon: TrendingUp },
+  { id: "anomalies", label: "Anomaly Detection", icon: AlertTriangle },
 ];
 
 export function DashboardSidebar({ activeTab, onTabChange }: SidebarProps) {
