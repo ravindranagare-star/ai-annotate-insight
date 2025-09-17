@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { MetricCard } from "../MetricCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   FileText, 
   Clock, 
@@ -39,8 +41,28 @@ const annotatorPerformance = [
 ];
 
 export function ProductionTab() {
+  const [selectedBatch, setSelectedBatch] = useState<string>("all");
+
   return (
     <div className="space-y-6">
+      {/* Batch Selection */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold">Production Analytics</h2>
+          <p className="text-muted-foreground">Track production metrics by batch</p>
+        </div>
+        <Select value={selectedBatch} onValueChange={setSelectedBatch}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Select Batch" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Batches</SelectItem>
+            <SelectItem value="batch-1">Batch-1 (Editor Performance)</SelectItem>
+            <SelectItem value="batch-2">Batch-2 (Attribute Errors)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Production Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard

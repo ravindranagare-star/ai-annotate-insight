@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { ConversationalBot } from "../ai/ConversationalBot";
 import { 
   Brain, 
   MessageSquare, 
@@ -69,57 +70,27 @@ export function InsightsTab() {
 
   return (
     <div className="space-y-6">
-      {/* AI Chat Interface */}
-      <Card>
+      {/* AI Insights Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold flex items-center gap-2">
+            <Brain className="w-6 h-6 text-primary" />
+            AI-Powered Insights
+          </h2>
+          <p className="text-muted-foreground">Advanced analytics and predictions for annotation performance</p>
+        </div>
+      </div>
+
+      {/* Conversational AI Assistant */}
+      <Card className="border-primary/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="w-5 h-5" />
+            <MessageSquare className="w-5 h-5 text-primary" />
             Conversational Analytics
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {/* Chat History */}
-            <div className="h-64 overflow-y-auto space-y-3 p-4 bg-muted/20 rounded-lg">
-              {chatHistory.map((chat, index) => (
-                <div key={index} className={`flex ${chat.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-sm p-3 rounded-lg ${
-                    chat.type === 'user' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-card border border-border'
-                  }`}>
-                    <p className="text-sm">{chat.message}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {/* Input */}
-            <div className="flex gap-2">
-              <Input
-                placeholder="Ask about annotations, quality, or performance..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSendQuery()}
-              />
-              <Button onClick={handleSendQuery} disabled={isLoading}>
-                {isLoading ? <Search className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              </Button>
-            </div>
-            
-            {/* Quick Queries */}
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={() => setQuery("Show top performers this week")}>
-                Top Performers
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setQuery("What tasks need more resources?")}>
-                Resource Needs
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setQuery("Predict next week's workload")}>
-                Workload Forecast
-              </Button>
-            </div>
-          </div>
+          <ConversationalBot />
         </CardContent>
       </Card>
 

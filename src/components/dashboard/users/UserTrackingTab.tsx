@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { MetricCard } from "../MetricCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
   Users, 
@@ -10,7 +13,9 @@ import {
   Activity,
   Brain,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Bot,
+  Lightbulb
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from "recharts";
 
@@ -83,8 +88,42 @@ const skillRadarData = [
 ];
 
 export function UserTrackingTab() {
+  const [selectedBatch, setSelectedBatch] = useState<string>("all");
+  const [aiRecommendations, setAiRecommendations] = useState<Record<string, string>>({});
+
+  const getAIRecommendation = (annotator: string) => {
+    const recommendations = [
+      "Focus on improving bounding box precision by 15%. Recommended training: Object Detection Masterclass.",
+      "Excellent performance! Consider mentoring new team members to share best practices.",
+      "Speed up annotation process by 20% through keyboard shortcuts training. Schedule practice session.",
+      "Quality consistency needs attention. Review guidelines for text classification tasks.",
+      "Outstanding accuracy! Recommend for complex annotation tasks and team leadership role."
+    ];
+    
+    const recommendation = recommendations[Math.floor(Math.random() * recommendations.length)];
+    setAiRecommendations(prev => ({ ...prev, [annotator]: recommendation }));
+  };
+
   return (
     <div className="space-y-6">
+      {/* Batch Selection */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold">User Performance Tracking</h2>
+          <p className="text-muted-foreground">Monitor annotator performance by batch</p>
+        </div>
+        <Select value={selectedBatch} onValueChange={setSelectedBatch}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Select Batch" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Batches</SelectItem>
+            <SelectItem value="batch-1">Batch-1 (Editor Performance)</SelectItem>
+            <SelectItem value="batch-2">Batch-2 (Attribute Errors)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* User Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
@@ -175,7 +214,7 @@ export function UserTrackingTab() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity className="w-5 h-5" />
-            Annotator Performance Dashboard
+            Annotator Performance - {selectedBatch === "all" ? "All Batches" : selectedBatch.toUpperCase()}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -217,8 +256,30 @@ export function UserTrackingTab() {
                         {user.status.replace('_', ' ')}
                       </Badge>
                     </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => getAIRecommendation(user.name)}
+                        disabled={!!aiRecommendations[user.name]}
+                      >
+                        <Bot className="w-4 h-4 mr-1" />
+                        Get AI Recommendation
+                      </Button>
+                    </div>
                   </div>
                 </div>
+                {aiRecommendations[user.name] && (
+                  <div className="mt-3 p-3 bg-primary/5 rounded border border-primary/20">
+                    <div className="flex items-start gap-2">
+                      <Lightbulb className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm font-medium text-primary">AI Recommendation</p>
+                        <p className="text-sm text-muted-foreground">{aiRecommendations[user.name]}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

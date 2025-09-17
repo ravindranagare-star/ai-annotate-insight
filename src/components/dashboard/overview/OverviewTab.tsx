@@ -30,31 +30,46 @@ const taskDistribution = [
 ];
 
 export function OverviewTab() {
+  // Calculate aggregated metrics from all batches
+  const batchJobs = JSON.parse(localStorage.getItem('batchJobs') || '{}');
+  const allJobs = Object.values(batchJobs).flat() as any[];
+  
+  const totalJobs = allJobs.length;
+  const completedJobs = allJobs.filter(job => job.data_status === 'completed').length;
+  const pendingJobs = allJobs.filter(job => job.data_status === 'pending' || !job.data_status).length;
+  const inProgressJobs = allJobs.filter(job => job.data_status === 'in_progress').length;
+
   return (
     <div className="space-y-6">
-      {/* Key Metrics Grid */}
+      {/* Aggregated Overview Header */}
+      <div>
+        <h2 className="text-2xl font-semibold">Dashboard Overview</h2>
+        <p className="text-muted-foreground">Aggregated view of all batch data and performance metrics</p>
+      </div>
+
+      {/* Key Metrics Grid - Aggregated Data */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
-          title="Total Annotations"
-          value="1,247"
-          change={{ value: "+12% from last week", trend: "up" }}
+          title="Total Jobs"
+          value={totalJobs.toString() || "1,247"}
+          change={{ value: `${completedJobs} completed, ${pendingJobs} pending`, trend: "up" }}
           icon={CheckCircle}
         />
         <MetricCard
-          title="Average Quality Score"
-          value="91.3%"
+          title="Completion Rate"
+          value={totalJobs > 0 ? `${Math.round((completedJobs / totalJobs) * 100)}%` : "91.3%"}
           change={{ value: "+2.1% from last week", trend: "up" }}
           icon={Shield}
         />
         <MetricCard
-          title="Active Annotators"
-          value="23"
+          title="Active Batches"
+          value={Object.keys(batchJobs).length.toString() || "23"}
           change={{ value: "3 more than yesterday", trend: "up" }}
           icon={Users}
         />
         <MetricCard
-          title="Avg. Time per Task"
-          value="4.2min"
+          title="In Progress Jobs"
+          value={inProgressJobs.toString() || "4.2min"}
           change={{ value: "-8% improvement", trend: "up" }}
           icon={Clock}
         />

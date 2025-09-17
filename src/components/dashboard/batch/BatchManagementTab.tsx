@@ -43,6 +43,7 @@ interface Job {
   job_id: string;
   ref_id?: string;
   client_file_name?: string;
+  client_file?: string;
   data_status?: string;
   making_date?: string;
   qc_name?: string;
@@ -52,6 +53,7 @@ interface Job {
   assigned_to?: string;
   assigned_date?: string;
   assigned_by?: string;
+  [key: string]: any; // Allow additional dynamic fields from CSV
 }
 
 export function BatchManagementTab() {
@@ -114,16 +116,35 @@ export function BatchManagementTab() {
       
       setBatches(prev => [newBatch, ...prev]);
       
-      // Create jobs from CSV
+      // Create jobs from CSV - preserve ALL columns
       const newJobs: Job[] = rows.map(row => {
-        const job: Partial<Job> = {};
+        const job: any = {};
         headers.forEach((header, index) => {
-          (job as any)[header] = row[index];
+          job[header] = row[index] || '';
         });
+        
+        // For fresh data, ensure QC fields exist but are empty
+        if (importData.dataType === 'fresh') {
+          job.data_status = job.data_status || '';
+          job.making_date = job.making_date || '';
+          job.qc_name = job.qc_name || '';
+          job.qc_date = job.qc_date || '';
+          job.qc_status = job.qc_status || '';
+          job.action = job.action || '';
+          job.assigned_to = job.assigned_to || '';
+          job.assigned_date = job.assigned_date || '';
+          job.assigned_by = job.assigned_by || '';
+        }
+        
         return job as Job;
       });
       
-      // If this is the selected batch, update jobs
+      // Store jobs data by batch ID for later retrieval
+      const batchJobs = JSON.parse(localStorage.getItem('batchJobs') || '{}');
+      batchJobs[newBatch.id] = newJobs;
+      localStorage.setItem('batchJobs', JSON.stringify(batchJobs));
+      
+      // If this is the selected batch, update jobs immediately
       if (selectedBatch?.id === newBatch.id) {
         setJobs(newJobs);
       }
@@ -134,28 +155,76 @@ export function BatchManagementTab() {
   const handleBatchSelect = (batch: Batch) => {
     setSelectedBatch(batch);
     setCurrentPage(1);
+    setSelectedJobs([]);
     
-    // Load sample jobs for selected batch
-    if (batch.id === "batch-1") {
-      // Editor performance data
+    // Load jobs from localStorage or sample data
+    const batchJobs = JSON.parse(localStorage.getItem('batchJobs') || '{}');
+    
+    if (batchJobs[batch.id]) {
+      setJobs(batchJobs[batch.id]);
+    } else if (batch.id === "batch-1") {
+      // Editor performance sample data
       const sampleJobs: Job[] = [
         {
           job_id: "job-001",
           ref_id: "ref-001", 
           client_file_name: "document_001.pdf",
           data_status: "completed",
+          making_date: "2024-01-10",
           qc_name: "mayank.bisht@b2rtechnologies.com",
+          qc_date: "2024-01-12",
           qc_status: "approved",
-          assigned_to: "dimpal.arya@b2r.co.in"
+          action: "approved",
+          assigned_to: "dimpal.arya@b2r.co.in",
+          assigned_date: "2024-01-10",
+          assigned_by: "admin@company.com"
         },
         {
           job_id: "job-002",
           ref_id: "ref-002",
           client_file_name: "document_002.pdf", 
           data_status: "in_progress",
+          making_date: "2024-01-11",
           qc_name: "pankaj.panwar@b2r.co.in",
+          qc_date: "",
           qc_status: "pending",
-          assigned_to: "harshita.arya@b2r.in"
+          action: "pending",
+          assigned_to: "harshita.arya@b2r.in",
+          assigned_date: "2024-01-11",
+          assigned_by: "admin@company.com"
+        }
+      ];
+      setJobs(sampleJobs);
+    } else if (batch.id === "batch-2") {
+      // Attribute errors sample data
+      const sampleJobs: Job[] = [
+        {
+          job_id: "job-101",
+          ref_id: "attr-001",
+          client_file_name: "attributes_001.json",
+          data_status: "pending",
+          making_date: "",
+          qc_name: "",
+          qc_date: "",
+          qc_status: "",
+          action: "",
+          assigned_to: "",
+          assigned_date: "",
+          assigned_by: ""
+        },
+        {
+          job_id: "job-102",
+          ref_id: "attr-002",
+          client_file_name: "attributes_002.json",
+          data_status: "pending",
+          making_date: "",
+          qc_name: "",
+          qc_date: "",
+          qc_status: "",
+          action: "",
+          assigned_to: "",
+          assigned_date: "",
+          assigned_by: ""
         }
       ];
       setJobs(sampleJobs);
@@ -309,9 +378,13 @@ export function BatchManagementTab() {
                       />
                     </th>
                     <th className="text-left py-3 px-4 font-medium">Job ID</th>
+                    <th className="text-left py-3 px-4 font-medium">Ref ID</th>
                     <th className="text-left py-3 px-4 font-medium">Client File</th>
                     <th className="text-left py-3 px-4 font-medium">Status</th>
+                    <th className="text-left py-3 px-4 font-medium">Making Date</th>
                     <th className="text-left py-3 px-4 font-medium">QC Name</th>
+                    <th className="text-left py-3 px-4 font-medium">QC Date</th>
+                    <th className="text-left py-3 px-4 font-medium">QC Status</th>
                     <th className="text-left py-3 px-4 font-medium">Assigned To</th>
                     <th className="text-left py-3 px-4 font-medium">Actions</th>
                   </tr>
@@ -326,7 +399,8 @@ export function BatchManagementTab() {
                         />
                       </td>
                       <td className="py-3 px-4 font-medium">{job.job_id}</td>
-                      <td className="py-3 px-4 text-muted-foreground">{job.client_file_name || job.ref_id}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{job.ref_id || '-'}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{job.client_file_name || job.client_file || '-'}</td>
                       <td className="py-3 px-4">
                         <Badge variant={
                           job.data_status === 'completed' ? 'default' :
@@ -335,7 +409,19 @@ export function BatchManagementTab() {
                           {job.data_status || 'pending'}
                         </Badge>
                       </td>
+                      <td className="py-3 px-4 text-muted-foreground">{job.making_date || '-'}</td>
                       <td className="py-3 px-4 text-muted-foreground">{job.qc_name || '-'}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{job.qc_date || '-'}</td>
+                      <td className="py-3 px-4">
+                        {job.qc_status && (
+                          <Badge variant={
+                            job.qc_status === 'approved' ? 'default' :
+                            job.qc_status === 'rejected' ? 'destructive' : 'secondary'
+                          }>
+                            {job.qc_status}
+                          </Badge>
+                        )}
+                      </td>
                       <td className="py-3 px-4 text-muted-foreground">{job.assigned_to || 'Unassigned'}</td>
                       <td className="py-3 px-4">
                         <DropdownMenu>
