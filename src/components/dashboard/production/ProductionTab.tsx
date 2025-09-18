@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MetricCard } from "../MetricCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -42,6 +42,17 @@ const annotatorPerformance = [
 
 export function ProductionTab() {
   const [selectedBatch, setSelectedBatch] = useState<string>("all");
+  const [batches, setBatches] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Load batches from localStorage
+    const batchJobs = JSON.parse(localStorage.getItem('batchJobs') || '{}');
+    const batchList = Object.keys(batchJobs).map(batchId => ({
+      id: batchId,
+      name: batchId.charAt(0).toUpperCase() + batchId.slice(1).replace('-', ' ')
+    }));
+    setBatches([{ id: "all", name: "All Batches" }, ...batchList]);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -56,9 +67,11 @@ export function ProductionTab() {
             <SelectValue placeholder="Select Batch" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Batches</SelectItem>
-            <SelectItem value="batch-1">Batch-1 (Editor Performance)</SelectItem>
-            <SelectItem value="batch-2">Batch-2 (Attribute Errors)</SelectItem>
+            {batches.map((batch) => (
+              <SelectItem key={batch.id} value={batch.id}>
+                {batch.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

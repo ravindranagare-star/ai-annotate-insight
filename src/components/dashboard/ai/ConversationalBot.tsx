@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Bot, Send, User, CheckCircle, AlertCircle, Info } from "lucide-react";
+import { getAllBatches, getBatchJobs, updateBatchJob, getJobCountsByStatus } from "@/utils/batchUtils";
 
 interface Message {
   id: string;
@@ -36,21 +37,55 @@ export function ConversationalBot() {
   const processCommand = async (command: string): Promise<Message> => {
     const lowerCommand = command.toLowerCase();
     
+    // Get actual batch data using utility functions
+    const allBatches = getAllBatches();
+    
     // Assignment commands
     if (lowerCommand.includes("assign") && lowerCommand.includes("to")) {
       const jobMatch = command.match(/jobs?\s+([^to]+)\s+to\s+(\S+@\S+)/i);
+      const batchMatch = command.match(/batch[-\s]*(\d+|\w+)/i);
+      
       if (jobMatch) {
         const jobs = jobMatch[1].split(/[,\s]+/).filter(j => j.trim());
         const assignee = jobMatch[2];
+        const batchId = batchMatch ? `batch-${batchMatch[1]}` : null;
+        
+        // Actually update the batch data if batch is specified
+        if (batchId) {
+          let successCount = 0;
+          jobs.forEach(jobId => {
+            const success = updateBatchJob(batchId, jobId, {
+              assigned_to: assignee,
+              assigned_date: new Date().toISOString().split('T')[0],
+              assigned_by: "ai-assistant"
+            });
+            if (success) successCount++;
+          });
+          
+          if (successCount === 0) {
+            return {
+              id: Date.now().toString(),
+              type: "bot",
+              content: `Could not assign jobs. Please check if the jobs exist in ${batchId}.`,
+              timestamp: new Date(),
+              actions: [{
+                type: "assignment",
+                data: { jobs, assignee, batch: batchId },
+                success: false,
+                message: "Assignment failed - jobs not found"
+              }]
+            };
+          }
+        }
         
         return {
           id: Date.now().toString(),
           type: "bot",
-          content: `Successfully assigned ${jobs.length} jobs to ${assignee}`,
+          content: `Successfully assigned ${jobs.length} jobs to ${assignee}${batchId ? ` in ${batchId}` : ''}`,
           timestamp: new Date(),
           actions: [{
             type: "assignment",
-            data: { jobs, assignee },
+            data: { jobs, assignee, batch: batchId },
             success: true,
             message: `Jobs ${jobs.join(", ")} assigned to ${assignee}`
           }]
@@ -64,31 +99,27 @@ export function ConversationalBot() {
       const statusMatch = command.match(/(pending|completed|in[_\s]progress|rejected|approved)/i);
       
       if (batchMatch) {
-        const batchId = batchMatch[1];
+        const batchId = `batch-${batchMatch[1]}`;
         const status = statusMatch ? statusMatch[1].replace(/[_\s]/g, '_') : null;
         
-        // Mock data - in real implementation, this would query actual data
-        const mockCounts = {
-          pending: 23,
-          in_progress: 15,
-          completed: 67,
-          approved: 45,
-          rejected: 8
-        };
+        // Get actual data using utility functions
+        const statusCounts = getJobCountsByStatus(batchId);
+        const jobs = getBatchJobs(batchId);
         
         if (status) {
-          const count = mockCounts[status as keyof typeof mockCounts] || 0;
+          const count = statusCounts[status] || 0;
           return {
             id: Date.now().toString(),
             type: "bot",
-            content: `Batch-${batchId} has ${count} ${status.replace('_', ' ')} jobs.`,
+            content: `${batchId} has ${count} ${status.replace('_', ' ')} jobs.`,
             timestamp: new Date()
           };
         } else {
+          const total = jobs.length;
           return {
             id: Date.now().toString(),
             type: "bot",
-            content: `Batch-${batchId} summary:\n• Pending: ${mockCounts.pending}\n• In Progress: ${mockCounts.in_progress}\n• Completed: ${mockCounts.completed}\n• Total: ${mockCounts.pending + mockCounts.in_progress + mockCounts.completed}`,
+            content: `${batchId} summary:\n• Total Jobs: ${total}\n• Pending: ${statusCounts.pending || 0}\n• In Progress: ${statusCounts.in_progress || 0}\n• Completed: ${statusCounts.completed || 0}\n• Approved: ${statusCounts.approved || 0}\n• Rejected: ${statusCounts.rejected || 0}`,
             timestamp: new Date()
           };
         }
@@ -96,24 +127,34 @@ export function ConversationalBot() {
     }
     
     // Show/Filter commands
-    if (lowerCommand.includes("show") && (lowerCommand.includes("rejected") || lowerCommand.includes("approved"))) {
+    if (lowerCommand.includes("show") && (lowerCommand.includes("rejected") || lowerCommand.includes("approved") || lowerCommand.includes("assigned"))) {
       const batchMatch = command.match(/batch[-\s]*(\d+|\w+)/i);
-      const statusMatch = command.match(/(rejected|approved)/i);
+      const statusMatch = command.match(/(rejected|approved|assigned)/i);
       
       if (batchMatch && statusMatch) {
-        const batchId = batchMatch[1];
+        const batchId = `batch-${batchMatch[1]}`;
         const status = statusMatch[1];
+        
+        // Get actual filtered data
+        const jobs = getBatchJobs(batchId);
+        let filteredJobs = [];
+        
+        if (status === 'assigned') {
+          filteredJobs = jobs.filter((job: any) => job.assigned_to && job.assigned_to.trim() !== '');
+        } else {
+          filteredJobs = jobs.filter((job: any) => job.qc_status === status || job.data_status === status);
+        }
         
         return {
           id: Date.now().toString(),
           type: "bot",
-          content: `Showing ${status} jobs in Batch-${batchId}. Found 8 jobs matching your criteria.`,
+          content: `Showing ${status} jobs in ${batchId}. Found ${filteredJobs.length} jobs matching your criteria.\n\nJobs: ${filteredJobs.map((job: any) => job.job_id).slice(0, 5).join(', ')}${filteredJobs.length > 5 ? '...' : ''}`,
           timestamp: new Date(),
           actions: [{
             type: "filter",
-            data: { batch: batchId, status },
+            data: { batch: batchId, status, jobs: filteredJobs },
             success: true,
-            message: `Filtered to show ${status} jobs in Batch-${batchId}`
+            message: `Filtered to show ${status} jobs in ${batchId}`
           }]
         };
       }
@@ -123,7 +164,7 @@ export function ConversationalBot() {
     return {
       id: Date.now().toString(),
       type: "bot",
-      content: "I understand you want to work with the dashboard data. Could you try rephrasing? I can help with:\n• Job assignments: 'Assign jobs A, B, C to user@email.com'\n• Status queries: 'How many pending jobs in Batch-1?'\n• Data filtering: 'Show rejected jobs in Batch-2'",
+      content: "I understand you want to work with the dashboard data. Could you try rephrasing? I can help with:\n• Job assignments: 'Assign job J-101 to user@email.com in Batch-1'\n• Status queries: 'How many pending jobs in Batch-1?'\n• Data filtering: 'Show assigned jobs in Batch-1'",
       timestamp: new Date()
     };
   };

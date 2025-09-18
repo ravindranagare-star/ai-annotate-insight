@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CSVImportModal } from "@/components/CSVImportModal";
+import { getAllBatches, getBatchJobs, type Batch, type Job } from "@/utils/batchUtils";
 import { 
   Upload, 
   Download, 
@@ -29,32 +30,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 
-interface Batch {
-  id: string;
-  name: string;
-  type: "fresh" | "qced";
-  uploadDate: string;
-  uploadedBy: string;
-  jobCount: number;
-  status: "processing" | "completed" | "error";
-}
-
-interface Job {
-  job_id: string;
-  ref_id?: string;
-  client_file_name?: string;
-  client_file?: string;
-  data_status?: string;
-  making_date?: string;
-  qc_name?: string;
-  qc_date?: string;
-  qc_status?: string;
-  action?: string;
-  assigned_to?: string;
-  assigned_date?: string;
-  assigned_by?: string;
-  [key: string]: any; // Allow additional dynamic fields from CSV
-}
+// Interfaces are now imported from utils
 
 export function BatchManagementTab() {
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -70,28 +46,8 @@ export function BatchManagementTab() {
   const jobsPerPage = 20;
 
   useEffect(() => {
-    // Load sample batches
-    const sampleBatches: Batch[] = [
-      {
-        id: "batch-1",
-        name: "Editor Performance Q1",
-        type: "qced",
-        uploadDate: "2024-01-15",
-        uploadedBy: "admin@company.com",
-        jobCount: 41,
-        status: "completed"
-      },
-      {
-        id: "batch-2", 
-        name: "Attribute Errors Analysis",
-        type: "fresh",
-        uploadDate: "2024-01-14",
-        uploadedBy: "manager@company.com", 
-        jobCount: 49,
-        status: "completed"
-      }
-    ];
-    setBatches(sampleBatches);
+    // Load all batches using utility function
+    setBatches(getAllBatches());
   }, []);
 
   const handleImport = async (importData: any) => {
@@ -103,9 +59,10 @@ export function BatchManagementTab() {
       const headers = lines[0].split(',').map(h => h.trim());
       const rows = lines.slice(1).map(line => line.split(',').map(cell => cell.trim()));
       
-      // Create new batch
+      // Create new batch metadata
+      const batchId = importData.batchId.toLowerCase();
       const newBatch: Batch = {
-        id: importData.batchId.toLowerCase(),
+        id: batchId,
         name: importData.batchName,
         type: importData.dataType,
         uploadDate: new Date().toISOString().split('T')[0],
@@ -114,7 +71,18 @@ export function BatchManagementTab() {
         status: "completed"
       };
       
-      setBatches(prev => [newBatch, ...prev]);
+      // Store batch metadata
+      const batchMetadata = JSON.parse(localStorage.getItem('batchMetadata') || '{}');
+      batchMetadata[batchId] = {
+        name: newBatch.name,
+        type: newBatch.type,
+        uploadDate: newBatch.uploadDate,
+        uploadedBy: newBatch.uploadedBy,
+        status: newBatch.status
+      };
+      localStorage.setItem('batchMetadata', JSON.stringify(batchMetadata));
+      
+      setBatches(getAllBatches());
       
       // Create jobs from CSV - preserve ALL columns
       const newJobs: Job[] = rows.map(row => {
@@ -141,11 +109,11 @@ export function BatchManagementTab() {
       
       // Store jobs data by batch ID for later retrieval
       const batchJobs = JSON.parse(localStorage.getItem('batchJobs') || '{}');
-      batchJobs[newBatch.id] = newJobs;
+      batchJobs[batchId] = newJobs;
       localStorage.setItem('batchJobs', JSON.stringify(batchJobs));
       
       // If this is the selected batch, update jobs immediately
-      if (selectedBatch?.id === newBatch.id) {
+      if (selectedBatch?.id === batchId) {
         setJobs(newJobs);
       }
     };
@@ -157,80 +125,9 @@ export function BatchManagementTab() {
     setCurrentPage(1);
     setSelectedJobs([]);
     
-    // Load jobs from localStorage or sample data
-    const batchJobs = JSON.parse(localStorage.getItem('batchJobs') || '{}');
-    
-    if (batchJobs[batch.id]) {
-      setJobs(batchJobs[batch.id]);
-    } else if (batch.id === "batch-1") {
-      // Editor performance sample data
-      const sampleJobs: Job[] = [
-        {
-          job_id: "job-001",
-          ref_id: "ref-001", 
-          client_file_name: "document_001.pdf",
-          data_status: "completed",
-          making_date: "2024-01-10",
-          qc_name: "mayank.bisht@b2rtechnologies.com",
-          qc_date: "2024-01-12",
-          qc_status: "approved",
-          action: "approved",
-          assigned_to: "dimpal.arya@b2r.co.in",
-          assigned_date: "2024-01-10",
-          assigned_by: "admin@company.com"
-        },
-        {
-          job_id: "job-002",
-          ref_id: "ref-002",
-          client_file_name: "document_002.pdf", 
-          data_status: "in_progress",
-          making_date: "2024-01-11",
-          qc_name: "pankaj.panwar@b2r.co.in",
-          qc_date: "",
-          qc_status: "pending",
-          action: "pending",
-          assigned_to: "harshita.arya@b2r.in",
-          assigned_date: "2024-01-11",
-          assigned_by: "admin@company.com"
-        }
-      ];
-      setJobs(sampleJobs);
-    } else if (batch.id === "batch-2") {
-      // Attribute errors sample data
-      const sampleJobs: Job[] = [
-        {
-          job_id: "job-101",
-          ref_id: "attr-001",
-          client_file_name: "attributes_001.json",
-          data_status: "pending",
-          making_date: "",
-          qc_name: "",
-          qc_date: "",
-          qc_status: "",
-          action: "",
-          assigned_to: "",
-          assigned_date: "",
-          assigned_by: ""
-        },
-        {
-          job_id: "job-102",
-          ref_id: "attr-002",
-          client_file_name: "attributes_002.json",
-          data_status: "pending",
-          making_date: "",
-          qc_name: "",
-          qc_date: "",
-          qc_status: "",
-          action: "",
-          assigned_to: "",
-          assigned_date: "",
-          assigned_by: ""
-        }
-      ];
-      setJobs(sampleJobs);
-    } else {
-      setJobs([]);
-    }
+    // Load jobs using utility function
+    const batchJobs = getBatchJobs(batch.id);
+    setJobs(batchJobs);
   };
 
   const handleJobSelection = (jobId: string, checked: boolean) => {
